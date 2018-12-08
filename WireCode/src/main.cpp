@@ -1,10 +1,17 @@
-// MPU-6050 Short Example Sketch
-// By Arduino User JohnChi
-// August 17, 2014
-// Public Domain
-#include<Wire.h>
-#include<Arduino.h>
+#include <Wire.h>
+#include <Arduino.h>
+#include <ESP8266WiFi.h>
+#include <FirebaseArduino.h>
+#include <ArduinoJson.h>
 
+
+// FIREBASE VARIABLES
+#define FIREBASE_HOST "ipmedth.firebaseio.com"
+#define FIREBASE_AUTH "DzVSfnl0MxRuDqTYOKNfdiTduBuJSf8yyo7i2Mls"
+#define WIFI_SSID "Carlvin's iPhone"
+#define WIFI_PASSWORD "12345678"
+
+// MPU6050 Variables 
 const int MPU_addr=0x68;  // I2C address of the MPU-6050
 
 
@@ -53,6 +60,8 @@ int16_t X,Y,Z;
       int times = 0;
       int samples = 200;
 
+      Serial.println("Offsetting");
+
       while(times < samples) {
         readMPU(100);
         CalcX += AcX / 65;
@@ -68,28 +77,71 @@ int16_t X,Y,Z;
 
   }
 
-  void angleMPU(){
-
-  }
-  void setMpuValues(){
+  void setMpuValues(int readStat){
     readMPU(100);
-    X = ((AcX/65) - gyroXoffset) * 0.02f;
-    Y = ((AcY/65) - gyroYoffset) * 0.02f;
-    //Z = (AcZ/65) - gyroZoffset;
+    if(readStat == 1){
+      X = ((AcX/65) - gyroXoffset) * 0.02f;
+      Y = ((AcY/65) - gyroYoffset) * 0.02f;
+      //Z = (AcZ/65) - gyroZoffset;
+    }
+    else if (readStat = 2){
+      X = ((AcX/65) - gyroXoffset);
+      Y = ((AcY/65) - gyroYoffset);
+    }
+
   }
 
-  void printMPU(){
-    setMpuValues();
+  void printMPU(int readStat){
+    setMpuValues(readStat);
     Serial.print(" | GyX = "); Serial.print(X);
     Serial.print(" | GyY = "); Serial.println(Y);
   }
 
+  void setupWifi(){
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    Serial.print("connecting");
+    while (WiFi.status() != WL_CONNECTED) {
+      Serial.print(".");
+      delay(500);
+    }
+    Serial.println();
+    Serial.print("connected: ");
+    Serial.println(WiFi.localIP());
+    
+    Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+  }
+
+  void setFirebaseData(){
+
+    // get new values
+    setMpuValues(1);
+
+    // post values
+    Firebase.setFloat("X", X);
+    Firebase.setFloat("Y", Y);
+    // handle error
+    if (Firebase.failed()) {
+        Serial.print("setting /number failed:");
+        Serial.println(Firebase.error());  
+        return;
+    }
+
+
+
+  }
+
 
 void setup(){
-  setupMPU();
-  offsetMPU();
   Serial.begin(115200);
+  Serial.println("Setting up MPU");
+  setupMPU();
+  Serial.println("Calcing MPU Offset");
+  offsetMPU();
+  Serial.println("Seetup wifi");
+  setupWifi();
+
 }
 void loop(){
-  printMPU();
+  printMPU(1);
+  setFirebaseData();
 }
