@@ -69,7 +69,7 @@ int16_t X,Y,Z;
   }
 
   void angleMPU(){
-      
+
   }
   void setMpuValues(){
     readMPU(100);
