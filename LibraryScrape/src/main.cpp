@@ -5,6 +5,7 @@
 #include <Wire.h>
 #include <ESP8266WiFi.h>
 #include <SocketIOClient.h>
+//#include <cstdlib>
 
 MPU6050 mpu6050(Wire);
 
@@ -15,8 +16,8 @@ StaticJsonBuffer<200> jsonBuffer;
 int n;
 
 SocketIOClient client;
-const char* ssid = "Carlvin’s iPhone";
-const char* password = "12345678";
+const char* ssid = "wifi2"; // Carlvin’s iPhone
+const char* password = "lumc12345"; // 12345678
 
 char host[] = "83.81.251.42";
 int port = 8080;
@@ -30,6 +31,12 @@ unsigned long lastreply = 0;
 unsigned long lastsend = 0;
 String JSON;
 JsonObject& root = jsonBuffer.createObject();
+
+
+// mpu values
+String x,y,z;
+float ZeroX, ZeroY, ZeroZ;
+
 
 void setupMPU(){
   Wire.begin(D2,D1);
@@ -74,22 +81,65 @@ void setupSocket(){
   if (client.connected())
   {
     Serial.println("Connected");
-    client.send("data","Waarde","Working");
+    client.send("data","waarden","Connected");
   }
   
+}
+
+void updateMPU(){
+  mpu6050.update();
+  x = mpu6050.getAngleX() - ZeroX;
+  y = mpu6050.getAngleY() - ZeroY;
+  z = mpu6050.getAngleZ() - ZeroZ;
+  
+  x = (String)x;
+  y = (String)y;
+  z = (String)z;
+
+}
+
+void setZeroing(){
+  mpu6050.update();
+  /*int valuesX;
+  int valuesY;
+  int valuesZ;
+
+  for(int i = 0; i < 50; i++){
+    mpu6050.update();
+    valuesX += mpu6050.getAngleX();
+    valuesY += mpu6050.getAngleY();
+    valuesZ += mpu6050.getAngleZ();
+	}*/
+
+  ZeroX = mpu6050.getAngleX();
+  ZeroY = mpu6050.getAngleY();
+  ZeroZ = mpu6050.getAngleZ();
+
+}
+
+void printMPU(){
+  updateMPU();
+  Serial.println(x + ","+ y +","+ z);
+}
+
+void postValues(){
+  updateMPU();
+  client.monitor();
+  /*client.send("data","x",x);
+  client.send("data","y",y);
+  client.send("data","z",z);*/
+  client.send("data","waarden", x + "," + y + "," + z );
+  delay(20);
 }
 
 void setup() {
   Serial.begin(115200);
   setupMPU();
+  setZeroing();
   setupWifi();
   setupSocket();
 }
 
 void loop() {
-  mpu6050.update();
-  String values = (String)mpu6050.getAngleX() +","+ (String)mpu6050.getAngleY() +","+ (String)mpu6050.getAngleZ();
-  client.monitor();
-  client.send("data","Waarde",values);
-
+  postValues();
 }

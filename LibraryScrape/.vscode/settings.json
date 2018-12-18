@@ -1,6 +1,8 @@
 {
     "terminal.integrated.env.osx": {
-        "PATH": "/Users/Carl/.platformio/penv/bin:/Users/Carl/.platformio/penv:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/Library/Frameworks/Mono.framework/Versions/Current/Commands:/usr/local/CrossPack-AVR/bin",
+        "PATH": "/Users/Carl/.platformio/penv/bin:/Users/Carl/.platformio/penv:/Library/Frameworks/Python.framework/Versions/3.7/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/Library/Frameworks/Mono.framework/Versions/Current/Commands:/usr/local/CrossPack-AVR/bin",
         "PLATFORMIO_CALLER": "vscode"
-    }
+    },
+    "python.pythonPath": "/usr/local/opt/python3/bin/python3.6",
+    "python.linting.enabled": false
 }
