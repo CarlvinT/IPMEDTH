@@ -159,7 +159,9 @@ bool SocketIOClient::monitor() {
 		{
 			parser(index2);
 		}
+		return 1;
 	}
+	
 }
 
 void SocketIOClient::sendHandshake(char hostname[]) {

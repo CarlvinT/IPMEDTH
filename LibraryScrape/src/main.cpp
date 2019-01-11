@@ -14,6 +14,7 @@ StaticJsonBuffer<200> jsonBuffer;
 
 
 int n;
+String incoming;
 
 SocketIOClient client;
 const char* ssid = "wifi2"; // Carlvin’s iPhone
@@ -39,9 +40,10 @@ float ZeroX, ZeroY, ZeroZ;
 
 
 void setupMPU(){
-  Wire.begin(D2,D1);
+  Wire.begin(4,5);
   mpu6050.begin();
   mpu6050.calcGyroOffsets(true);
+
 }
 
 void setupWifi(){
@@ -81,7 +83,7 @@ void setupSocket(){
   if (client.connected())
   {
     Serial.println("Connected");
-    client.send("data","waarden","Connected");
+    //client.send("data","waarden","Connected");
   }
   
 }
@@ -91,6 +93,10 @@ void updateMPU(){
   x = mpu6050.getAngleX() - ZeroX;
   y = mpu6050.getAngleY() - ZeroY;
   z = mpu6050.getAngleZ() - ZeroZ;
+
+  // Y = 20 to -50 
+  // X = 35 to -25
+
   
   x = (String)x;
   y = (String)y;
@@ -124,12 +130,20 @@ void printMPU(){
 
 void postValues(){
   updateMPU();
-  client.monitor();
+  //client.monitor();
   /*client.send("data","x",x);
   client.send("data","y",y);
   client.send("data","z",z);*/
   client.send("data","waarden", x + "," + y + "," + z );
-  delay(20);
+  delay(10);
+}
+
+void readValues(){
+  if(client.monitor()){
+  incoming = Rcontent;
+  Serial.print("Data: ");
+  Serial.println(incoming);
+  }
 }
 
 void setup() {
@@ -138,8 +152,14 @@ void setup() {
   setZeroing();
   setupWifi();
   setupSocket();
+  client.send("register_sensor","ESP", "SENSOR1" );
 }
 
 void loop() {
   postValues();
+  //readValues();
+
+  /*if(client.monitor()){
+    Serial.println(Rcontent);
+  }*/
 }
