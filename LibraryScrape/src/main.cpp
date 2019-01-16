@@ -7,20 +7,6 @@
 #include <SocketIOClient.h>
 
 
-// REMOVE LATER
-#include <WiFiUdp.h>
-/*#include <string>
-#include<iostream>
-#include<sstream>*/
-WiFiUDP Udp;
-unsigned int localUdpPort = 4210;  // local port to listen on
-char incomingPacket[255];  // buffer for incoming packets
-char replyPacket[255];  
-//char  replyPacket[] = "hello there";        
-
-
-
-
 // MPU calibration and printing variables
 MPU6050 mpu6050(Wire);
 String x,y,z;
@@ -164,22 +150,6 @@ void setupSocket(){
   }
   
 }
-// REMOVE UDP LATER
-void setupUDP(){
-  Udp.begin(localUdpPort);
-  Serial.printf("Now listening at IP %s, UDP port %d\n", WiFi.localIP().toString().c_str(), localUdpPort);
-}
-
-void postUDP(){
-    /*std::ostringstream convert;
-    float ji = 100.00;
-    convert << ji;*/
-
-    Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
-    Udp.write(10);
-    Udp.endPacket();
-    delay(20);
-}
 
 // Updates Mpu position and post to socket.io
 void postValues(){
@@ -206,21 +176,12 @@ void setup() {
   setupMPU();
   setZeroing();
   setupWifi();
-  //setupSocket();
-  setupUDP();
+  setupSocket();
   //client.send("register_sensor","ESP", "SENSOR1" );
 }
 
 void loop() {
-
   if(WL_CONNECTED){
-    postUDP();
-  }
-  else{
-    Serial.println("Wifi down");
-  }
-
-  /*if(WL_CONNECTED){
     if(client.connected()){
           postValues();
     }
@@ -230,6 +191,6 @@ void loop() {
   }
   else{
     Serial.println("Wifi down");
-  }*/
+  }
   
 }
