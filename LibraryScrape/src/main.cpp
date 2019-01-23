@@ -4,10 +4,12 @@
 #include <ESP8266WiFi.h>
 
 // Libraries nodig voor gyroscope
+  // https://github.com/tockn/MPU6050_tockn 
 #include <MPU6050_tockn.h> // Library is aangepast zodat het met een ESP8266 kan werken (Moet de samlping in calcGyroOffsets in MPU6050_tockn.cpp naar 1200 van 2000 )
 #include <Wire.h>
 
 // library voor data verstuuren via webSockets
+  //https://github.com/washo4evr/Socket.io-v1.x-Library
 #include <SocketIOClient.h> 
 #include <ArduinoJson.h> 
 
