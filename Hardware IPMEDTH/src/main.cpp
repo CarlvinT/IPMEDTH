@@ -30,6 +30,9 @@ float ZeroX, ZeroY, ZeroZ; // Zeroing offset values
 // Wifi info 
 const char* ssid = "wifi2"; 
 const char* password = "lumc12345"; 
+IPAddress ap_local_IP(192,168,1,1);
+IPAddress ap_gateway(192,168,1,254);
+IPAddress ap_subnet(255,255,255,0);
 
 
 //Socket.io variables and initialization
@@ -52,7 +55,7 @@ SocketIOClient client;
   extern String Rcontent;
 
   // Mode van data verzenden  true = socket - false = webserver
-  int socketMode = true;  
+  int socketMode = false;  
 
 
 
@@ -77,6 +80,15 @@ void setupWifi(){
   
 }
 
+// Setup ESP8266 als access point in plaats van wifi 
+void setupAccessPoint(){
+  WiFi.softAPConfig(ap_local_IP, ap_gateway, ap_subnet);
+  Serial.print("Setting soft-AP ... ");
+  WiFi.softAP(ssid, password);
+  Serial.print("Soft-AP IP address = ");
+  Serial.println(WiFi.softAPIP());
+}
+
 
 //#                        ###### MPU FUNCTIES ########
 
@@ -90,13 +102,46 @@ void setupMPU(){
 void setZeroing(){
   mpu6050.calcGyroOffsets(true); // calculate gyroscope offsets
 
-  mpu6050.update(); // get current position
+  int samples = 50;
 
-  // kan helaas geen for loop gebruiken om meerdere sample te krijgen omdat het crasht
+  //mpu6050.update(); // get current position
 
-  ZeroX = mpu6050.getAngleX();
-  ZeroY = mpu6050.getAngleY();
-  ZeroZ = mpu6050.getAngleZ();
+  float allx;
+  float ally;
+  float allz;
+
+  for( int a = 0; a < samples; a++ ) {
+      mpu6050.update();
+      allx += mpu6050.getAngleX();
+      ally += mpu6050.getAngleY();
+      allz += mpu6050.getAngleZ();
+  }
+
+  allx = allx / samples;
+  ally = ally / samples;
+  allz = allz / samples;
+
+  float checkX = mpu6050.getAngleX() - allx;
+  float checkY = mpu6050.getAngleY() - ally;
+  float checkZ = mpu6050.getAngleZ() - allz;
+
+  if(checkX > 0){
+    allx += checkX;
+  } 
+
+  if(checkY > 0){
+    ally += checkY;
+  } 
+
+  if(checkZ > 0){
+    allz += checkZ;
+  } 
+
+
+  // replace with mpu6050.getAngleX(); enz 
+  ZeroX = allx; 
+  ZeroY = ally;
+  ZeroZ = allz;
 
 } 
 
@@ -105,10 +150,19 @@ void updateMPU(){
 
   mpu6050.update(); // get current position
 
+  float xz = mpu6050.getAngleZ() - ZeroZ;
+
   // get new values - offset values
   xi = mpu6050.getAngleX() - ZeroX; 
   yi = mpu6050.getAngleY() - ZeroY;
-  zi = mpu6050.getAngleZ() - ZeroZ;
+
+  if (xz > 360){
+     zi = (mpu6050.getAngleZ() - ZeroZ) - 360;
+  }
+  else{
+    zi = mpu6050.getAngleZ() - ZeroZ;
+  }
+ 
 
 
 
@@ -209,6 +263,7 @@ void postValues(){
 }
 
 
+
 //#                        ###### SETUP AND LOOP########
 
 // Setup, runs only once
@@ -225,14 +280,15 @@ void setup() {
 
   // wifi setup 
   setupWifi();
+  //setupAccessPoint();
 
-// Socket of Webserver setup
+  // Socket of Webserver setup
   if(socketMode ==  true){
     setupSocket();
   }
   else{
-    setupMyServer();
     server.on("/", postServerData); // BELANGRIJK, DEZE REGELT DE RESPONSE BIJ DATA REQUEST 
+    setupMyServer();
 
   }
 
@@ -241,10 +297,9 @@ void setup() {
 
 //Keeps looping
 void loop() {
-
   if(socketMode == true){
     postValues(); // socket posting
-  }
+  } 
   else{
     server.handleClient(); // webserver posting
   }
